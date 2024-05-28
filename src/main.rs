@@ -1,14 +1,21 @@
-use enigo::{self, Enigo, Settings};
+use enigo::{Enigo, Settings};
 use std::{
     sync::{Arc, Mutex},
     time::Duration
 };
-use dasp::{sample::Sample, sample::ToSample};
-use vosk::{self, Recognizer};
-use cpal::{self, traits::{DeviceTrait, HostTrait, StreamTrait}, ChannelCount, SampleFormat};
+use vosk::{Recognizer,Model};
+use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleFormat};
 
+pub mod input_processing;
+pub mod global_state;
+
+use crate::global_state::global_state::{GLOBAL_STATE, init_global_state};
+use crate::input_processing::input_processing::process_input;
 
 fn main() {
+    //Initialize Global Variables
+    init_global_state(); 
+
     //Set up input simulator
     let mut _enigo = Enigo::new(&Settings::default()).unwrap();
 
@@ -28,37 +35,15 @@ fn main() {
 
 
     //Set up Vosk
-    let mut model = vosk::Model::new("model/").unwrap();
-    let mut recognizer = vosk::Recognizer::new(&model, sample_rate as f32).expect("Couldn't create Recognizer");
+    let model = Model::new("model/").unwrap();
+    let mut recognizer = Recognizer::new(&model, sample_rate as f32).expect("Couldn't create Recognizer");
 
     recognizer.set_max_alternatives(1);
     recognizer.set_words(true);
     recognizer.set_partial_words(true);
 
     let recognizer = Arc::new(Mutex::new(recognizer));
-
     let recognizer_clone = recognizer.clone();
-
-    let words = ["space", "control", "alt", "tab", "enter", "back", 
-                "slash", "comma", "apostrophe", "tick","period","mod",
-                "dot" ,"up", "down", "left", "right", "curly", "brace",
-                "left", "right", "parenthesis", "parentheses", "plus", "minus",
-                "ampersand", "pound", "exclamation", "point", "question",
-                "mark", "semi", "colon", "quotation", "at", "percent", "carrot",
-                "star", "splat", "under", "score", "underscore", "bracket", "angle",
-                "pipe", "escape", "function", "a", "b", "c", "d", "e", "f", "g", "h",
-                "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
-                "w", "x", "y", "z", "zed", "one", "two", "three", "four", "five", "fix", "seven",
-                "eight", "nine", "ten", "zero", "negative", "positive", "hundred", "thousand",
-                "million", "billion", "trillion", "page", "home", "insert", "delete", "end",
-                "scroll", "lock", "print", "screen", "pause", "num", "dollar", "shift", "return",
-                "escape", "quit", "exit", "begin", "stop",
-    ];
-    for word in words{
-        if let None = model.find_word(word) {
-            println!("Model couldn't find word: {}", word);
-        }
-    }
 
     //Create input stream 
     let stream = match sample_format{
@@ -71,38 +56,7 @@ fn main() {
 
 
     stream.play().unwrap();
-    loop{
+    while GLOBAL_STATE.get().read().unwrap().run == true {
         std::thread::sleep(Duration::from_millis(500));
     }     
-}
-
-fn process_input<T: Sample + ToSample<i16>>(recognizer: &mut Recognizer, data: &[T], channels: ChannelCount){
-    let data: Vec<i16> = data.iter().map(|v| v.to_sample()).collect();
-    let data = if channels != 1{
-        stereo_to_mono(&data)
-    } else{
-        data
-    };
-
-    let state = recognizer.accept_waveform(&data);
-    match state {
-        vosk::DecodingState::Running => {}
-        vosk::DecodingState::Finalized => {
-            let res = recognizer.result().multiple().unwrap();
-            let text = res.alternatives[0].text;
-            if text.eq("quit") || text.eq("exit"){
-                println!("Exiting Vimcal...");   
-                std::process::exit(0);
-            }else{
-                println!("Word was: {}", text);
-            }
-        }
-        vosk::DecodingState::Failed => eprintln!("Recognizer Errored"),
-    }
-}
-
-fn stereo_to_mono(input_data: &[i16]) -> Vec<i16> {
-    let mut res = Vec::with_capacity(input_data.len()/2);
-    res.extend(input_data.chunks_exact(2).map(|chunk| chunk[0]/2 + chunk[1]/2));
-    res
 }
