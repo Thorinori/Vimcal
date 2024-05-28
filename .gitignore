@@ -8,3 +8,11 @@ target/
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+
+vosk-linux-x86_64-0.3.45/
+model/
+
+
+# Added by cargo
+
+/target
