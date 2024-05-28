@@ -6,8 +6,8 @@ use std::{
 use vosk::{Recognizer,Model};
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleFormat};
 
-pub mod input_processing;
 pub mod global_state;
+pub mod input_processing;
 
 use crate::global_state as gstate;
 use crate::input_processing as processing;
@@ -16,12 +16,10 @@ fn main() {
     //Initialize Global Variables
     gstate::init_global_state();
     
-    //Set up input simulator
-    let mut _enigo = Enigo::new(&Settings::default()).unwrap();
-
     //Set up Mic Input
     let host = cpal::default_host();
-    let input_device = host.default_input_device().expect("Missing Input Device");
+    let input_device = host.default_input_device().expect("Missing Input Device");//TODO Maybe make
+                                                                                  //selectable?
 
     let mut supported_configs = input_device.supported_input_configs().expect("Error Querying Device Configs");
     let supported_config = supported_configs.next().expect("No Supported Configs!").with_max_sample_rate();
@@ -35,7 +33,7 @@ fn main() {
 
 
     //Set up Vosk
-    let model = Model::new("model/").unwrap();
+    let model = Model::new("model/").unwrap();//TODO Make argument? Setting stored in file?
     let mut recognizer = Recognizer::new(&model, sample_rate as f32).expect("Couldn't create Recognizer");
 
     recognizer.set_max_alternatives(1);
@@ -43,14 +41,13 @@ fn main() {
     recognizer.set_partial_words(true);
 
     let recognizer = Arc::new(Mutex::new(recognizer));
-    let recognizer_clone = recognizer.clone();
 
     //Create input stream 
     let stream = match sample_format{
-       SampleFormat::F32 => input_device.build_input_stream(&config, move |data: &[f32], _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
-       SampleFormat::I16 => input_device.build_input_stream(&config, move |data: &[i16], _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
-       SampleFormat::U16 => input_device.build_input_stream(&config, move |data: &[u16], _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
-       SampleFormat::U8  => input_device.build_input_stream(&config, move |data: &[u8],  _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::F32 => input_device.build_input_stream(&config, move |data: &[f32], _| processing::process_input(&mut recognizer.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::I16 => input_device.build_input_stream(&config, move |data: &[i16], _| processing::process_input(&mut recognizer.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::U16 => input_device.build_input_stream(&config, move |data: &[u16], _| processing::process_input(&mut recognizer.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::U8  => input_device.build_input_stream(&config, move |data: &[u8],  _| processing::process_input(&mut recognizer.lock().unwrap(), data, channels),err_fn , None),
        sample_format => panic!("Unsupported Sample Format '{sample_format}'")
     }.unwrap();
 
