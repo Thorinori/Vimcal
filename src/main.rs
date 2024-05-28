@@ -9,13 +9,13 @@ use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleFormat};
 pub mod input_processing;
 pub mod global_state;
 
-use crate::global_state::global_state::{GLOBAL_STATE, init_global_state};
-use crate::input_processing::input_processing::process_input;
+use crate::global_state as gstate;
+use crate::input_processing as processing;
 
 fn main() {
     //Initialize Global Variables
-    init_global_state(); 
-
+    gstate::init_global_state();
+    
     //Set up input simulator
     let mut _enigo = Enigo::new(&Settings::default()).unwrap();
 
@@ -47,16 +47,16 @@ fn main() {
 
     //Create input stream 
     let stream = match sample_format{
-       SampleFormat::F32 => input_device.build_input_stream(&config, move |data: &[f32], _| process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
-       SampleFormat::I16 => input_device.build_input_stream(&config, move |data: &[i16], _| process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
-       SampleFormat::U16 => input_device.build_input_stream(&config, move |data: &[u16], _| process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
-       SampleFormat::U8  => input_device.build_input_stream(&config, move |data: &[u8],  _| process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::F32 => input_device.build_input_stream(&config, move |data: &[f32], _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::I16 => input_device.build_input_stream(&config, move |data: &[i16], _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::U16 => input_device.build_input_stream(&config, move |data: &[u16], _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
+       SampleFormat::U8  => input_device.build_input_stream(&config, move |data: &[u8],  _| processing::process_input(&mut recognizer_clone.lock().unwrap(), data, channels),err_fn , None),
        sample_format => panic!("Unsupported Sample Format '{sample_format}'")
     }.unwrap();
 
 
     stream.play().unwrap();
-    while GLOBAL_STATE.get().read().unwrap().run == true {
+    while gstate::GLOBAL_STATE.get().read().unwrap().run == true {
         std::thread::sleep(Duration::from_millis(500));
     }     
 }
