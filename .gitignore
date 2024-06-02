@@ -11,6 +11,8 @@ target/
 
 vosk-linux-x86_64-0.3.45/
 model/
+medium_model/
+big_model/
 
 
 # Added by cargo

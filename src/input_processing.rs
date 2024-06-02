@@ -1,7 +1,7 @@
 use dasp::{sample::Sample, sample::ToSample};
 use cpal::ChannelCount;
 use vosk::Recognizer;
-use crate::global_state;
+use crate::{global_state, key_funcs};
 
 pub fn process_input<T: Sample + ToSample<i16>>(recognizer: &mut Recognizer, data: &[T], channels: ChannelCount){
     let data: Vec<i16> = data.iter().map(|v| v.to_sample()).collect();
@@ -26,7 +26,9 @@ pub fn process_input<T: Sample + ToSample<i16>>(recognizer: &mut Recognizer, dat
                     println!("Disabling listening...");
                 }else{
                     if !text.eq(""){
-                        println!("Word was: {}", text);
+                        key_funcs::press(text);
+                        println!("Word was: {}", text); //TODO: GUI eventually, optional to see
+                                                        //what it heard. Overlay using eframe
                     }
                 }
             } else if text.eq("enable listening") {

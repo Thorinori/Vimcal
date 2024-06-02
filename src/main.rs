@@ -1,4 +1,3 @@
-use enigo::{Enigo, Settings};
 use std::{
     sync::{Arc, Mutex},
     time::Duration
@@ -8,6 +7,7 @@ use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, SampleFormat};
 
 pub mod global_state;
 pub mod input_processing;
+pub mod key_funcs;
 
 use crate::global_state as gstate;
 use crate::input_processing as processing;
@@ -15,7 +15,7 @@ use crate::input_processing as processing;
 fn main() {
     //Initialize Global Variables
     gstate::init_global_state();
-    
+
     //Set up Mic Input
     let host = cpal::default_host();
     let input_device = host.default_input_device().expect("Missing Input Device");//TODO Maybe make
