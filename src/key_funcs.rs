@@ -99,7 +99,7 @@ pub fn init_binds(){
         (String::from("right brace"),Key::Unicode(']')),
         (String::from("left curly brace"),Key::Unicode('{')),
         (String::from("right curly brace"),Key::Unicode('}')),
-        (String::from("exlamation point"),Key::Unicode('!')),
+        (String::from("exclamation point"),Key::Unicode('!')),
         (String::from("at sign"),Key::Unicode('@')),
         (String::from("pound sign"),Key::Unicode('#')),
         (String::from("dollar sign"),Key::Unicode('$')),
@@ -201,7 +201,7 @@ pub fn press(pressed: &str){
                         let _ = enigo.key(*k, Release);
                     }
                     held.clear();
-                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    std::thread::sleep(std::time::Duration::from_millis(50));
                 }
             }
             for k in &held{

@@ -18,7 +18,7 @@ fn main() {
 
     //Set up Mic Input
     let host = cpal::default_host();
-    let input_device = host.default_input_device().expect("Missing Input Device");//TODO Maybe make
+    let input_device = host.default_input_device().expect("Missing Input Device");//TODO: Maybe make
                                                                                   //selectable?
 
     let mut supported_configs = input_device.supported_input_configs().expect("Error Querying Device Configs");
@@ -33,7 +33,7 @@ fn main() {
 
 
     //Set up Vosk
-    let model = Model::new("model/").unwrap();//TODO Make argument? Setting stored in file?
+    let model = Model::new("model/").unwrap();//TODO: Make argument? Setting stored in file?
     let mut recognizer = Recognizer::new(&model, sample_rate as f32).expect("Couldn't create Recognizer");
 
     recognizer.set_max_alternatives(1);
